@@ -1,5 +1,5 @@
 set(PLATFORM_REQUIRED_DEPS EGL GBM LibDRM LibInput Xkbcommon)
-set(PLATFORM_OPTIONAL_DEPS VAAPI)
+set(PLATFORM_OPTIONAL_DEPS NVMPI VAAPI)
 
 set(GBM_RENDER_SYSTEM "" CACHE STRING "Render system to use with GBM: \"gl\" or \"gles\"")
 

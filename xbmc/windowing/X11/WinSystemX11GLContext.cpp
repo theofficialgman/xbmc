@@ -34,6 +34,9 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
+#include "cores/VideoPlayer/DVDCodecs/Video/NVV4L.h"
+#include "cores/VideoPlayer/VideoRenderers/HwDecRender/NVV4LRenderer.h"
+
 using namespace KODI;
 
 std::unique_ptr<CWinSystemBase> CWinSystemBase::CreateWinSystem()
@@ -82,6 +85,7 @@ CWinSystemX11GLContext::CWinSystemX11GLContext()
     }
   }
 
+  NVV4LCodec::Register();
   m_lirc.reset(OPTIONALS::LircRegister());
 }
 
@@ -275,7 +279,9 @@ bool CWinSystemX11GLContext::RefreshGLContext(bool force)
   RETRO::CRPProcessInfoX11::RegisterRendererFactory(new RETRO::CRendererFactoryOpenGL);
   CDVDFactoryCodec::ClearHWAccels();
   VIDEOPLAYER::CRendererFactory::ClearRenderer();
-  CLinuxRendererGL::Register();
+  //CLinuxRendererGL::Register();
+  NVV4L::NVV4LEGLRenderer::Register();
+
 
   CScreenshotSurfaceGL::Register();
 

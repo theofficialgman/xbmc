@@ -57,6 +57,12 @@ if(CORE_PLATFORM_NAME_LC STREQUAL gbm)
   endif()
 endif()
 
+
+if(NVMPI_FOUND) 
+  list(APPEND SOURCES NVV4LRenderer.cpp)
+  list(APPEND HEADERS NVV4LRenderer.h)
+endif()
+
 # we might want to build on linux systems
 # with ENABLE_VDPAU=OFF and ENABLE_VAAPI=OFF
 if(SOURCES)
