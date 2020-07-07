@@ -41,7 +41,7 @@ NVV4LEGLRenderer::~NVV4LEGLRenderer()
 
 bool NVV4LEGLRenderer::UploadTexture(int index)
 {
-
+  return false;
 };
 
 void NVV4LEGLRenderer::DeleteTexture(int index)
@@ -49,9 +49,9 @@ void NVV4LEGLRenderer::DeleteTexture(int index)
 
 };
 
-bool CreateTexture(int index)
+bool NVV4LEGLRenderer::CreateTexture(int index)
 {
-
+  return false;
 };
 
 bool NVV4LEGLRenderer::Supports(ERENDERFEATURE feature)
