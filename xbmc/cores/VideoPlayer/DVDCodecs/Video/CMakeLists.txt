@@ -48,4 +48,7 @@ if(CORE_PLATFORM_NAME_LC STREQUAL gbm)
   list(APPEND HEADERS DVDVideoCodecDRMPRIME.h)
 endif()
 
+list(APPEND SOURCES NVV4LCodec.cpp)
+list(APPEND HEADERS NVV4LCodec.h)
+
 core_add_library(dvdvideocodecs)
