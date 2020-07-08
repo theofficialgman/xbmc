@@ -79,6 +79,8 @@ ifeq ($(TARGET_PLATFORM),wayland)
   DEPENDS += wayland waylandpp wayland-protocols
 endif
 
+DEPENDS += libx11 libxext mesa v4l-utils
+
 .PHONY: $(DEPENDS)
 
 all: .installed-$(PLATFORM)
@@ -118,6 +120,14 @@ samba-gplv3: gnutls
 taglib: $(ZLIB)
 dav1d: meson-cross-file
 libspdlog: libfmt
+libxorgproto: meson-cross-file
+libdrm: libpciaccess
+mesa: libdrm meson-cross-file
+libxcb: libxau
+libx11: libxcb xtrans xorgproto
+libxext: libx11
+libxrandr: xorg-macro-util libxext libxrender
+v4l-utils: libx11
 
 .installed-$(PLATFORM): $(DEPENDS)
 	touch $@
