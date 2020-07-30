@@ -338,7 +338,8 @@ protected:
   {
     MODE_RAW,
     MODE_TRANSCODE,
-    MODE_PCM
+    MODE_PCM,
+    MODE_DSD
   }m_mode;
 
   CActiveAESink m_sink;

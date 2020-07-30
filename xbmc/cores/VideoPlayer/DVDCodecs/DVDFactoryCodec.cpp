@@ -11,6 +11,7 @@
 #include "Audio/DVDAudioCodec.h"
 #include "Audio/DVDAudioCodecFFmpeg.h"
 #include "Audio/DVDAudioCodecPassthrough.h"
+#include "Audio/DVDAudioCodecDSD.h"
 #include "DVDStreamInfo.h"
 #include "Overlay/DVDOverlayCodec.h"
 #include "Overlay/DVDOverlayCodecFFmpeg.h"
@@ -189,6 +190,13 @@ CDVDAudioCodec* CDVDFactoryCodec::CreateAudioCodec(CDVDStreamInfo &hint, CProces
     {
       return pCodec.release();
     }
+
+  }
+
+  pCodec.reset(new CDVDAudioCodecDSD(processInfo));
+  if (pCodec->Open(hint, options))
+  {
+    return pCodec.release();
   }
 
   pCodec.reset(new CDVDAudioCodecFFmpeg(processInfo));
