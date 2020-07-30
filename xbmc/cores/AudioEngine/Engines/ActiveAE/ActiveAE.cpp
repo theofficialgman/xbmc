@@ -1650,7 +1650,11 @@ void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &sett
       *mode = MODE_RAW;
   }
   // raw DSD pass though
-  else if (format.m_dataFormat == AE_FMT_DSD_U8 || format.m_dataFormat == AE_FMT_DSD_U16 || format.m_dataFormat == AE_FMT_DSD_U32)
+  else if (format.m_dataFormat == AE_FMT_DSD_U8 || 
+           format.m_dataFormat == AE_FMT_DSD_U16_BE || 
+           format.m_dataFormat == AE_FMT_DSD_U16_LE || 
+           format.m_dataFormat == AE_FMT_DSD_U32_BE ||
+           format.m_dataFormat == AE_FMT_DSD_U32_LE)
   {
     if (mode)
       *mode = MODE_PCM;

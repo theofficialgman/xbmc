@@ -96,8 +96,10 @@ enum AEDataFormat
 
   // DSD formats
   AE_FMT_DSD_U8,
-  AE_FMT_DSD_U16,
-  AE_FMT_DSD_U32,
+  AE_FMT_DSD_U16_BE,
+  AE_FMT_DSD_U16_LE,
+  AE_FMT_DSD_U32_BE,
+  AE_FMT_DSD_U32_LE,
 
   // Bitstream
   AE_FMT_RAW,

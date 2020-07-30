@@ -480,8 +480,10 @@ bool VideoPlayerCodec::NeedConvert(AEDataFormat fmt)
     case AE_FMT_FLOAT:
     case AE_FMT_DOUBLE:
     case AE_FMT_DSD_U8:
-    case AE_FMT_DSD_U16:
-    case AE_FMT_DSD_U32:
+    case AE_FMT_DSD_U16_BE:
+    case AE_FMT_DSD_U16_LE:
+    case AE_FMT_DSD_U32_BE:
+    case AE_FMT_DSD_U32_LE:
       return false;
     default:
       return true;

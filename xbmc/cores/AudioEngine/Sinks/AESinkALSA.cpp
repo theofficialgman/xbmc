@@ -598,22 +598,37 @@ snd_pcm_format_t CAESinkALSA::AEFormatToALSAFormat(const enum AEDataFormat forma
     case AE_FMT_S16LE : return SND_PCM_FORMAT_S16_LE;
     case AE_FMT_S16BE : return SND_PCM_FORMAT_S16_BE;
     case AE_FMT_S24NE4: return SND_PCM_FORMAT_S24;
-//    case AE_FMT_DSD_U8: return SND_PCM_FORMAT_DSD_U8;
-    case AE_FMT_DSD_U8: return SND_PCM_FORMAT_SPECIAL;
+    case AE_FMT_DSD_U8: return SND_PCM_FORMAT_DSD_U8;
 #ifdef __BIG_ENDIAN__
     case AE_FMT_S24NE3: return SND_PCM_FORMAT_S24_3BE;
-    case AE_FMT_DSD_U16: return SND_PCM_FORMAT_DSD_U16_BE;
-    case AE_FMT_DSD_U32: return SND_PCM_FORMAT_DSD_U32_BE;
 #else
     case AE_FMT_S24NE3: return SND_PCM_FORMAT_S24_3LE;
-    case AE_FMT_DSD_U16: return SND_PCM_FORMAT_DSD_U16_LE;
-    case AE_FMT_DSD_U32: return SND_PCM_FORMAT_DSD_U32_LE;
 #endif
+    case AE_FMT_DSD_U16_LE: return SND_PCM_FORMAT_DSD_U16_LE;
+    case AE_FMT_DSD_U16_BE: return SND_PCM_FORMAT_DSD_U16_BE;
+    case AE_FMT_DSD_U32_LE: return SND_PCM_FORMAT_DSD_U32_LE;
+    case AE_FMT_DSD_U32_BE: return SND_PCM_FORMAT_DSD_U32_BE;
     case AE_FMT_S32NE : return SND_PCM_FORMAT_S32;
     case AE_FMT_FLOAT : return SND_PCM_FORMAT_FLOAT;
 
     default:
       return SND_PCM_FORMAT_UNKNOWN;
+  }
+}
+
+static bool isDSD(const enum AEDataFormat format) 
+{
+
+  switch (format)
+  {
+    case AE_FMT_DSD_U8:
+    case AE_FMT_DSD_U16_BE:
+    case AE_FMT_DSD_U16_LE:
+    case AE_FMT_DSD_U32_BE:
+    case AE_FMT_DSD_U32_LE:
+      return true;
+    default:
+      return false;
   }
 }
 
@@ -663,6 +678,8 @@ bool CAESinkALSA::InitializeHW(const ALSAConfig &inconfig, ALSAConfig &outconfig
   /* try the data format */
   if (snd_pcm_hw_params_set_format(m_pcm, hw_params, fmt) < 0)
   {
+    bool is_dsd { isDSD(inconfig.format) };
+
     /* if the chosen format is not supported, try each one in descending order */
     CLog::Log(LOGINFO, "CAESinkALSA::InitializeHW - Your hardware does not support %s, trying other formats", CAEUtil::DataFormatToStr(outconfig.format));
     for (enum AEDataFormat i = AE_FMT_MAX; i > AE_FMT_INVALID; i = (enum AEDataFormat)((int)i - 1))
@@ -674,6 +691,12 @@ bool CAESinkALSA::InitializeHW(const ALSAConfig &inconfig, ALSAConfig &outconfig
 	continue;
 
       fmt = AEFormatToALSAFormat(i);
+      if (is_dsd && !isDSD(i))
+      {
+        CLog::Log(LOGDEBUG, "CAESinkALSA::InitializeHW - Skipping %s, DSD requested", CAEUtil::DataFormatToStr(i));
+        continue;
+      }
+
       if (fmt == SND_PCM_FORMAT_UNKNOWN)
         continue;
 
