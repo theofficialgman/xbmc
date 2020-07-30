@@ -49,17 +49,17 @@ bool CDVDAudioCodecDSD::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
     switch (hints.bitspersample) {
       case 8:
         m_format.m_dataFormat = AE_FMT_DSD_U8;
-        m_codecName = "pt-dsd64";
+        m_codecName = "pt-dsd";
         break;
 
       case 16:
-        m_format.m_dataFormat = AE_FMT_DSD_U16;
-        m_codecName = "pt-dsd128";
+        m_format.m_dataFormat = hints.codec == AV_CODEC_ID_DSD_LSBF ? AE_FMT_DSD_U16_LE : AE_FMT_DSD_U16_BE;
+        m_codecName = "pt-dsd";
         break;
 
       case 32:
-        m_format.m_dataFormat = AE_FMT_DSD_U32;
-        m_codecName = "pt-dsd256";
+        m_format.m_dataFormat = hints.codec == AV_CODEC_ID_DSD_LSBF ? AE_FMT_DSD_U32_LE : AE_FMT_DSD_U32_BE;
+        m_codecName = "pt-dsd";
         break;
       default:
         return false;
@@ -70,17 +70,17 @@ bool CDVDAudioCodecDSD::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
     switch (hints.bitspersample) {
       case 8:
         m_format.m_dataFormat = AE_FMT_DSD_U8;
-        m_codecName = "pt-dsd64";
+        m_codecName = "pt-dsd";
         break;
 
       case 16:
-        m_format.m_dataFormat = AE_FMT_DSD_U16;
-        m_codecName = "pt-dsd128";
+        m_format.m_dataFormat = hints.codec == AV_CODEC_ID_DSD_LSBF_PLANAR ? AE_FMT_DSD_U16_LE : AE_FMT_DSD_U16_BE;
+        m_codecName = "pt-dsd8";
         break;
 
       case 32:
-        m_format.m_dataFormat = AE_FMT_DSD_U32;
-        m_codecName = "pt-dsd256";
+        m_format.m_dataFormat = hints.codec == AV_CODEC_ID_DSD_LSBF_PLANAR ? AE_FMT_DSD_U32_LE : AE_FMT_DSD_U32_BE;
+        m_codecName = "pt-dsd6";
         break;
       default:
         return false;

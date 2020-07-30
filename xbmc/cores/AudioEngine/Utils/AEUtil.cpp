@@ -114,6 +114,8 @@ unsigned int CAEUtil::DataFormatToBits(const enum AEDataFormat dataFormat)
 
     8,                   /* DSD_U8 */
     16,                  /* DSD_U16*/
+    16,                  /* DSD_U16*/
+    32,                  /* DSD_U32*/
     32,                  /* DSD_U32*/
 
      8,                  /* RAW    */
@@ -215,7 +217,9 @@ const char* CAEUtil::DataFormatToStr(const enum AEDataFormat dataFormat)
 
     "AE_FMT_DSD_U8",
     "AE_FMT_DSD_U16",
-    "AE_FMT_DSD_U32",
+    "AE_FMT_DSD_U16_BE",
+    "AE_FMT_DSD_U32_LE",
+    "AE_FMT_DSD_U32_BE",
 
     "AE_FMT_RAW",
 
