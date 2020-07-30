@@ -12,6 +12,7 @@
 #include "URL.h"
 #include "cores/AudioEngine/AEResampleFactory.h"
 #include "cores/AudioEngine/Interfaces/AE.h"
+#include "cores/AudioEngine/Utils/AEChannelData.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
 #include "cores/VideoPlayer/DVDCodecs/DVDFactoryCodec.h"
 #include "cores/VideoPlayer/DVDDemuxers/DVDDemuxUtils.h"
@@ -478,6 +479,9 @@ bool VideoPlayerCodec::NeedConvert(AEDataFormat fmt)
     case AE_FMT_S32NE:
     case AE_FMT_FLOAT:
     case AE_FMT_DOUBLE:
+    case AE_FMT_DSD_U8:
+    case AE_FMT_DSD_U16:
+    case AE_FMT_DSD_U32:
       return false;
     default:
       return true;

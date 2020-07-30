@@ -11,7 +11,7 @@
 #include "AEChannelInfo.h"
 #include "AEStreamInfo.h"
 
-#define AE_IS_PLANAR(x) ((x) >= AE_FMT_U8P && (x) <= AE_FMT_FLOATP)
+#define AE_IS_PLANAR(x) (((x) >= AE_FMT_U8P && (x) <= AE_FMT_FLOATP) || ((x) >= AE_FMT_DSD_U8P && (x) <= AE_FMT_DSD_U32P))
 
 /**
  * The audio format structure that fully defines a stream's audio information

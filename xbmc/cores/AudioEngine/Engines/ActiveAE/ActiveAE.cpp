@@ -7,6 +7,7 @@
  */
 
 #include "ActiveAE.h"
+#include "Utils/AEChannelData.h"
 
 using namespace AE;
 using namespace ActiveAE;
@@ -1647,6 +1648,12 @@ void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &sett
   {
     if (mode)
       *mode = MODE_RAW;
+  }
+  // raw DSD pass though
+  else if (format.m_dataFormat == AE_FMT_DSD_U8 || format.m_dataFormat == AE_FMT_DSD_U16 || format.m_dataFormat == AE_FMT_DSD_U32)
+  {
+    if (mode)
+      *mode = MODE_PCM;
   }
   // transcode
   else if (settings.channels <= AE_CH_LAYOUT_2_0 && // no multichannel pcm

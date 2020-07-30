@@ -1,9 +1,11 @@
 set(SOURCES DVDAudioCodecFFmpeg.cpp
-            DVDAudioCodecPassthrough.cpp)
+            DVDAudioCodecPassthrough.cpp
+            DVDAudioCodecDSD.cpp)
 
 set(HEADERS DVDAudioCodec.h
             DVDAudioCodecFFmpeg.h
-            DVDAudioCodecPassthrough.h)
+            DVDAudioCodecPassthrough.h
+            DVDAudioCodecDSD.h)
 
 if(CORE_SYSTEM_NAME STREQUAL android)
   list(APPEND SOURCES DVDAudioCodecAndroidMediaCodec.cpp)

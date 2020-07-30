@@ -112,6 +112,10 @@ unsigned int CAEUtil::DataFormatToBits(const enum AEDataFormat dataFormat)
     sizeof(double) << 3, /* DOUBLE */
     sizeof(float ) << 3, /* FLOAT  */
 
+    8,                   /* DSD_U8 */
+    16,                  /* DSD_U16*/
+    32,                  /* DSD_U32*/
+
      8,                  /* RAW    */
 
      8,                  /* U8P    */
@@ -121,7 +125,11 @@ unsigned int CAEUtil::DataFormatToBits(const enum AEDataFormat dataFormat)
     32,                  /* S24NERP*/
     24,                  /* S24NE3P*/
     sizeof(double) << 3, /* DOUBLEP */
-    sizeof(float ) << 3  /* FLOATP  */
+    sizeof(float ) << 3, /* FLOATP  */
+
+    8,                   /* DSD_U8P */
+    16,                  /* DSD_U16P*/
+    32,                  /* DSD_U32P*/
  };
 
   return formats[dataFormat];
@@ -205,6 +213,10 @@ const char* CAEUtil::DataFormatToStr(const enum AEDataFormat dataFormat)
     "AE_FMT_DOUBLE",
     "AE_FMT_FLOAT",
 
+    "AE_FMT_DSD_U8",
+    "AE_FMT_DSD_U16",
+    "AE_FMT_DSD_U32",
+
     "AE_FMT_RAW",
 
     /* planar formats */
@@ -215,7 +227,11 @@ const char* CAEUtil::DataFormatToStr(const enum AEDataFormat dataFormat)
     "AE_FMT_S24NE4MSBP",
     "AE_FMT_S24NE3P",
     "AE_FMT_DOUBLEP",
-    "AE_FMT_FLOATP"
+    "AE_FMT_FLOATP",
+
+    "AE_FMT_DSD_U8P",
+    "AE_FMT_DSD_U16",
+    "AE_FMT_DSD_U32P"
   };
 
   return formats[dataFormat];

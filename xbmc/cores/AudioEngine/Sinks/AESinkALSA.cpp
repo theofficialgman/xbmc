@@ -9,6 +9,7 @@
 #include "AESinkALSA.h"
 
 #include "ServiceBroker.h"
+#include "Utils/AEChannelData.h"
 #include "cores/AudioEngine/AESinkFactory.h"
 #include "cores/AudioEngine/Utils/AEELDParser.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
@@ -25,6 +26,7 @@
 #include <stdint.h>
 #include <string>
 
+#include <alsa/pcm.h>
 #include <sys/utsname.h>
 
 #define ALSA_OPTIONS (SND_PCM_NO_AUTO_FORMAT | SND_PCM_NO_AUTO_CHANNELS | SND_PCM_NO_AUTO_RESAMPLE)
@@ -596,10 +598,16 @@ snd_pcm_format_t CAESinkALSA::AEFormatToALSAFormat(const enum AEDataFormat forma
     case AE_FMT_S16LE : return SND_PCM_FORMAT_S16_LE;
     case AE_FMT_S16BE : return SND_PCM_FORMAT_S16_BE;
     case AE_FMT_S24NE4: return SND_PCM_FORMAT_S24;
+//    case AE_FMT_DSD_U8: return SND_PCM_FORMAT_DSD_U8;
+    case AE_FMT_DSD_U8: return SND_PCM_FORMAT_SPECIAL;
 #ifdef __BIG_ENDIAN__
     case AE_FMT_S24NE3: return SND_PCM_FORMAT_S24_3BE;
+    case AE_FMT_DSD_U16: return SND_PCM_FORMAT_DSD_U16_BE;
+    case AE_FMT_DSD_U32: return SND_PCM_FORMAT_DSD_U32_BE;
 #else
     case AE_FMT_S24NE3: return SND_PCM_FORMAT_S24_3LE;
+    case AE_FMT_DSD_U16: return SND_PCM_FORMAT_DSD_U16_LE;
+    case AE_FMT_DSD_U32: return SND_PCM_FORMAT_DSD_U32_LE;
 #endif
     case AE_FMT_S32NE : return SND_PCM_FORMAT_S32;
     case AE_FMT_FLOAT : return SND_PCM_FORMAT_FLOAT;
