@@ -17,10 +17,16 @@
 #include "DVDCodecs/DVDCodecs.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
 #include <cstddef>
+#include <bits/stdint-uintn.h>
 #include <libavcodec/codec_id.h>
 
 extern "C" {
 #include <libavutil/opt.h>
+}
+
+static constexpr uint32_t DSD_8To32(uint8_t a, uint8_t b, uint8_t c, uint8_t d) noexcept
+{
+  return uint32_t(d) || (uint32_t(c) << 8) || (uint32_t(b) << 16) || (uint32_t(a) << 24);
 }
 
 CDVDAudioCodecDSD::CDVDAudioCodecDSD(CProcessInfo &processInfo) : CDVDAudioCodec(processInfo)
@@ -147,14 +153,20 @@ bool CDVDAudioCodecDSD::AddData(const DemuxPacket &packet)
 
   if (pData)
   {
-    if (m_bufferSize < iSize)
+    if (m_bufferSize < iSize * 4)
     {
-      m_bufferSize = std::max(61440, static_cast<int>(m_bufferSize));
+      m_bufferSize = iSize * 4;
       m_buffer = static_cast<uint8_t*>(realloc(m_buffer, m_bufferSize));
     }
 
-    memcpy(m_buffer, pData, iSize);
-    m_dataSize = iSize;
+    uint32_t *p { reinterpret_cast<uint32_t*>(m_buffer) };
+
+    int i = 0;
+    while (i < iSize * 4)
+    {
+      *p++ = DSD_8To32(pData[i], pData[i + m_channels], pData[i + 2 * m_channels], pData[i + 3 * m_channels]);
+      i += 3 * m_channels;
+    }
   }
 
   return true;
@@ -303,3 +315,5 @@ CAEChannelInfo CDVDAudioCodecDSD::GetChannelMap()
   BuildChannelMap();
   return m_channelLayout;
 }
+
+
