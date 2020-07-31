@@ -119,6 +119,8 @@ inline CAEChannelInfo CAESinkALSA::GetChannelLayoutRaw(const AEAudioFormat& form
     case CAEStreamInfo::STREAM_TYPE_AC3:
     case CAEStreamInfo::STREAM_TYPE_EAC3:
     case CAEStreamInfo::STREAM_TYPE_DTSHD:
+    case CAEStreamInfo::STREAM_TYPE_FLAC:
+    case CAEStreamInfo::STREAM_TYPE_SACD:
       count = 2;
       break;
     default:
@@ -1456,6 +1458,7 @@ void CAESinkALSA::EnumerateDevice(AEDeviceInfoList &list, const std::string &dev
       info.m_displayNameExtra += "S/PDIF";
 
       info.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_AC3);
+      info.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_SACD);
       info.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_DTSHD_CORE);
       info.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_DTS_1024);
       info.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_DTS_2048);
@@ -1585,6 +1588,8 @@ void CAESinkALSA::EnumerateDevice(AEDeviceInfoList &list, const std::string &dev
     info.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_DTS_512);
     info.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_EAC3);
     info.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_TRUEHD);
+    info.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_FLAC);
+    info.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_SACD);
 
     // indicate that we can do AE_FMT_RAW
     info.m_dataFormats.push_back(AE_FMT_RAW);

@@ -272,6 +272,8 @@ unsigned int CAEBitstreamPacker::GetOutputRate(CAEStreamInfo &info)
       else
         rate = 176400;
       break;
+    case CAEStreamInfo::STREAM_TYPE_FLAC:
+    case CAEStreamInfo::STREAM_TYPE_SACD:
     case CAEStreamInfo::STREAM_TYPE_DTS_512:
     case CAEStreamInfo::STREAM_TYPE_DTS_1024:
     case CAEStreamInfo::STREAM_TYPE_DTS_2048:
