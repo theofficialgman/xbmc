@@ -55,6 +55,14 @@ bool CDVDAudioCodecPassthrough::Open(CDVDStreamInfo &hints, CDVDCodecOptions &op
       m_codecName = "pt-dts";
       m_parser.SetCoreOnly(true);
       break;
+      
+    case CAEStreamInfo::STREAM_TYPE_FLAC:
+      m_codecName = "pt-flac";
+      break;
+
+    case CAEStreamInfo::STREAM_TYPE_SACD:
+      m_codecName = "pt-dsd";
+      break;
 
     case CAEStreamInfo::STREAM_TYPE_TRUEHD:
       m_trueHDBuffer.reset(new uint8_t[TRUEHD_BUF_SIZE]);

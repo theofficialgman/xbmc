@@ -38,6 +38,9 @@ CDVDAudioCodecDSD::~CDVDAudioCodecDSD()
 
 bool CDVDAudioCodecDSD::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
 {
+  return false;
+
+
   if (hints.cryptoSession)
   {
     CLog::Log(LOGERROR,"CDVDAudioCodecDSD::Open() CryptoSessions unsupported!");
