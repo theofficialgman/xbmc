@@ -69,6 +69,22 @@ static unsigned int ALSASampleRateList[] =
   0
 };
 
+static constexpr bool isDSD(const enum AEDataFormat format) noexcept
+{
+
+  switch (format)
+  {
+    case AE_FMT_DSD_U8:
+    case AE_FMT_DSD_U16_BE:
+    case AE_FMT_DSD_U16_LE:
+    case AE_FMT_DSD_U32_BE:
+    case AE_FMT_DSD_U32_LE:
+      return true;
+    default:
+      return false;
+  }
+}
+
 CAESinkALSA::CAESinkALSA() :
   m_pcm(NULL)
 {
@@ -482,6 +498,11 @@ bool CAESinkALSA::Initialize(AEAudioFormat &format, std::string &device)
   inconfig.format = format.m_dataFormat;
   inconfig.sampleRate = format.m_sampleRate;
 
+  if (isDSD(inconfig.format))
+  {
+    inconfig.sampleRate = 384000;
+  }
+
   /*
    * We can't use the better GetChannelLayout() at this point as the device
    * is not opened yet, and we need inconfig.channels to select the correct
@@ -618,21 +639,6 @@ snd_pcm_format_t CAESinkALSA::AEFormatToALSAFormat(const enum AEDataFormat forma
   }
 }
 
-static bool isDSD(const enum AEDataFormat format) 
-{
-
-  switch (format)
-  {
-    case AE_FMT_DSD_U8:
-    case AE_FMT_DSD_U16_BE:
-    case AE_FMT_DSD_U16_LE:
-    case AE_FMT_DSD_U32_BE:
-    case AE_FMT_DSD_U32_LE:
-      return true;
-    default:
-      return false;
-  }
-}
 
 bool CAESinkALSA::InitializeHW(const ALSAConfig &inconfig, ALSAConfig &outconfig)
 {
@@ -644,7 +650,7 @@ bool CAESinkALSA::InitializeHW(const ALSAConfig &inconfig, ALSAConfig &outconfig
   snd_pcm_hw_params_any(m_pcm, hw_params);
   snd_pcm_hw_params_set_access(m_pcm, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED);
 
-  unsigned int sampleRate   = inconfig.sampleRate;
+  unsigned int sampleRate = inconfig.sampleRate;
   snd_pcm_hw_params_set_rate_near    (m_pcm, hw_params, &sampleRate, NULL);
 
   unsigned int channelCount = inconfig.channels;
@@ -693,9 +699,8 @@ bool CAESinkALSA::InitializeHW(const ALSAConfig &inconfig, ALSAConfig &outconfig
 	continue;
 
       fmt = AEFormatToALSAFormat(i);
-      if (is_dsd && !isDSD(i))
+      if (is_dsd != isDSD(i))
       {
-        CLog::Log(LOGDEBUG, "CAESinkALSA::InitializeHW - Skipping %s, DSD requested", CAEUtil::DataFormatToStr(i));
         continue;
       }
 
