@@ -38,9 +38,6 @@ CDVDAudioCodecDSD::~CDVDAudioCodecDSD()
 
 bool CDVDAudioCodecDSD::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
 {
-  return false;
-
-
   if (hints.cryptoSession)
   {
     CLog::Log(LOGERROR,"CDVDAudioCodecDSD::Open() CryptoSessions unsupported!");
@@ -182,9 +179,9 @@ void CDVDAudioCodecDSD::GetData(DVDAudioFrame &frame)
 
   frame.nb_frames = bytes/frame.framesize;
   frame.framesOut = 0;
-  frame.planes = 1;
+  frame.planes = frame.format.m_channelLayout.Count();
 
-  frame.bits_per_sample = 1;
+  frame.bits_per_sample = 8;
   frame.format.m_sampleRate = m_format.m_sampleRate;
   frame.matrix_encoding = GetMatrixEncoding();
   frame.audio_service_type = GetAudioServiceType();
