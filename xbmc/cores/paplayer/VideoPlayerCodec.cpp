@@ -22,6 +22,7 @@
 #include "music/tags/TagLoaderTagLib.h"
 #include "utils/StringUtils.h"
 #include "utils/log.h"
+#include <libavcodec/codec_id.h>
 
 VideoPlayerCodec::VideoPlayerCodec()
 {
@@ -507,6 +508,19 @@ CAEStreamInfo::DataType VideoPlayerCodec::GetPassthroughStreamType(AVCodecID cod
 
     case AV_CODEC_ID_EAC3:
       format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_EAC3;
+      format.m_streamInfo.m_sampleRate = samplerate;
+      break;
+      
+    case AV_CODEC_ID_FLAC:
+      format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_FLAC;
+      format.m_streamInfo.m_sampleRate = samplerate;
+      break;
+
+    case AV_CODEC_ID_DSD_LSBF:
+    case AV_CODEC_ID_DSD_LSBF_PLANAR:
+    case AV_CODEC_ID_DSD_MSBF:
+    case AV_CODEC_ID_DSD_MSBF_PLANAR:
+      format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_SACD;
       format.m_streamInfo.m_sampleRate = samplerate;
       break;
 
