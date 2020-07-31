@@ -173,7 +173,7 @@ void CDVDAudioCodecDSD::GetData(DVDAudioFrame &frame)
   frame.passthrough = false;
   frame.format.m_dataFormat = m_format.m_dataFormat;
   frame.format.m_channelLayout = m_format.m_channelLayout;
-  frame.framesize = (CAEUtil::DataFormatToBits(frame.format.m_dataFormat) >> 3) * frame.format.m_channelLayout.Count();
+  frame.framesize = frame.format.m_channelLayout.Count();
   if(frame.framesize == 0)
     return;
 
@@ -181,11 +181,12 @@ void CDVDAudioCodecDSD::GetData(DVDAudioFrame &frame)
   frame.framesOut = 0;
   frame.planes = 1;
 
-  frame.bits_per_sample = CAEUtil::DataFormatToBits(frame.format.m_dataFormat);
+  frame.bits_per_sample = 1;
   frame.format.m_sampleRate = m_format.m_sampleRate;
   frame.matrix_encoding = GetMatrixEncoding();
   frame.audio_service_type = GetAudioServiceType();
   frame.profile = GetProfile();
+
   // compute duration.
   if (frame.format.m_sampleRate)
     frame.duration = ((double)frame.nb_frames * DVD_TIME_BASE) / frame.format.m_sampleRate;
@@ -209,8 +210,7 @@ int CDVDAudioCodecDSD::GetData(uint8_t** dst)
   m_format.m_dataFormat = GetDataFormat();
   m_format.m_channelLayout = GetChannelMap();
   m_format.m_sampleRate = GetSampleRate();
-  m_format.m_frameSize = m_format.m_channelLayout.Count() *
-                           CAEUtil::DataFormatToBits(m_format.m_dataFormat) >> 3;
+  m_format.m_frameSize = m_format.m_channelLayout.Count();
 
   *dst = m_buffer;
 
