@@ -25,7 +25,7 @@ extern "C" {
 
 static constexpr uint32_t DSD_8To32(uint8_t a, uint8_t b, uint8_t c, uint8_t d) noexcept
 {
-  return uint32_t(d) || (uint32_t(c) << 8) || (uint32_t(b) << 16) || (uint32_t(a) << 24);
+  return uint32_t(d) | (uint32_t(c) << 8) | (uint32_t(b) << 16) | (uint32_t(a) << 24);
 }
 
 CDVDAudioCodecDSD::CDVDAudioCodecDSD(CProcessInfo &processInfo) : CDVDAudioCodec(processInfo)
@@ -54,16 +54,19 @@ bool CDVDAudioCodecDSD::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
     switch (hints.bitspersample) {
       case 8:
         m_format.m_dataFormat = AE_FMT_DSD_U8;
+        m_planar = false;
         m_codecName = "pt-dsd";
         break;
 
       case 16:
         m_format.m_dataFormat = hints.codec == AV_CODEC_ID_DSD_LSBF ? AE_FMT_DSD_U16_LE : AE_FMT_DSD_U16_BE;
+        m_planar = false;
         m_codecName = "pt-dsd";
         break;
 
       case 32:
         m_format.m_dataFormat = hints.codec == AV_CODEC_ID_DSD_LSBF ? AE_FMT_DSD_U32_LE : AE_FMT_DSD_U32_BE;
+        m_planar = false;
         m_codecName = "pt-dsd";
         break;
       default:
@@ -75,16 +78,19 @@ bool CDVDAudioCodecDSD::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
     switch (hints.bitspersample) {
       case 8:
         m_format.m_dataFormat = AE_FMT_DSD_U8;
+        m_planar = true;
         m_codecName = "pt-dsd";
         break;
 
       case 16:
         m_format.m_dataFormat = hints.codec == AV_CODEC_ID_DSD_LSBF_PLANAR ? AE_FMT_DSD_U16_LE : AE_FMT_DSD_U16_BE;
+        m_planar = true;
         m_codecName = "pt-dsd8";
         break;
 
       case 32:
         m_format.m_dataFormat = hints.codec == AV_CODEC_ID_DSD_LSBF_PLANAR ? AE_FMT_DSD_U32_LE : AE_FMT_DSD_U32_BE;
+        m_planar = true;
         m_codecName = "pt-dsd6";
         break;
       default:
@@ -127,7 +133,7 @@ bool CDVDAudioCodecDSD::AddData(const DemuxPacket &packet)
     Reset();
   }
 
-  unsigned char *pData(const_cast<uint8_t*>(packet.pData));
+  uint8_t *pData(const_cast<uint8_t*>(packet.pData));
   int iSize(packet.iSize);
 
   if (pData)
@@ -152,20 +158,41 @@ bool CDVDAudioCodecDSD::AddData(const DemuxPacket &packet)
 
   if (pData)
   {
-    if (m_bufferSize < iSize * 4)
+    if (m_bufferSize < iSize)
     {
-      m_bufferSize = iSize * 4;
+      m_bufferSize = iSize * 2;
       m_buffer = static_cast<uint8_t*>(realloc(m_buffer, m_bufferSize));
     }
 
-    uint32_t *p { reinterpret_cast<uint32_t*>(m_buffer) };
 
-    int i = 0;
-    while (i < iSize * 4)
+    uint32_t *p { reinterpret_cast<uint32_t*>(m_buffer) }; 
+    bool marker { true };
+
+    m_dataSize = 0;
+
+    // repackage planar dataformat to single plane
+    for (size_t i = 0; i < iSize / m_channels / 2; ++i)
     {
-      *p++ = DSD_8To32(pData[i], pData[i + m_channels], pData[i + 2 * m_channels], pData[i + 3 * m_channels]);
-      i += 3 * m_channels;
+      for (int c = 0; c < m_channels; ++c)
+      {
+        const size_t fp = (iSize / m_channels) * c + (i * 2);
+
+        /*
+         **p++ = DSD_8To32(pData[fp], 
+         *                 pData[fp + 1], 
+         *                 pData[fp + 2],
+         *                 pData[fp + 3]);
+         */
+        *p++ = DSD_8To32( marker ? 0x05 : 0xFA, 
+                         pData[fp], 
+                         pData[fp + 1],
+                         0x00);
+
+        m_dataSize += 4;
+      }
+      marker = ! marker;
     }
+
   }
 
   return true;
@@ -182,17 +209,20 @@ void CDVDAudioCodecDSD::GetData(DVDAudioFrame &frame)
   }
 
   frame.passthrough = false;
-  frame.format.m_dataFormat = m_format.m_dataFormat;
+  frame.format.m_dataFormat = GetDataFormat();
   frame.format.m_channelLayout = m_format.m_channelLayout;
-  frame.framesize = frame.format.m_channelLayout.Count();
+  // frame.framesize = (CAEUtil::DataFormatToBits(frame.format.m_dataFormat) >> 3) * frame.format.m_channelLayout.Count();
+  frame.framesize = 2 * frame.format.m_channelLayout.Count();
+
   if(frame.framesize == 0)
     return;
 
-  frame.nb_frames = bytes/frame.framesize;
+  frame.nb_frames = bytes / frame.format.m_channelLayout.Count() / 2;
   frame.framesOut = 0;
-  frame.planes = frame.format.m_channelLayout.Count();
+  frame.planes = 1;
 
-  frame.bits_per_sample = 8;
+//  frame.bits_per_sample = CAEUtil::DataFormatToBits(frame.format.m_dataFormat);
+  frame.bits_per_sample = 32;
   frame.format.m_sampleRate = m_format.m_sampleRate;
   frame.matrix_encoding = GetMatrixEncoding();
   frame.audio_service_type = GetAudioServiceType();
@@ -205,28 +235,26 @@ void CDVDAudioCodecDSD::GetData(DVDAudioFrame &frame)
     frame.duration = 0.0;
 
   frame.pts = m_currentPts;
-  frame.hasDownmix = m_hasDownmix;
+  frame.hasDownmix = false;
 
-  if (frame.hasDownmix)
-  {
-    frame.centerMixLevel = m_downmixInfo.center_mix_level;
-  }
 }
 
 int CDVDAudioCodecDSD::GetData(uint8_t** dst)
 {
+
   if (!m_dataSize)
     AddData(DemuxPacket());
+
 
   m_format.m_dataFormat = GetDataFormat();
   m_format.m_channelLayout = GetChannelMap();
   m_format.m_sampleRate = GetSampleRate();
-  m_format.m_frameSize = m_format.m_channelLayout.Count();
-
+  m_format.m_frameSize = (CAEUtil::DataFormatToBits(m_format.m_dataFormat) >> 3) * m_channels;
+  
   *dst = m_buffer;
 
-  size_t bytes(m_bufferSize);
-  m_bufferSize = 0;
+  size_t bytes(m_dataSize);
+  m_dataSize = 0;
 
   return bytes;
 }
@@ -244,17 +272,18 @@ int CDVDAudioCodecDSD::GetChannels()
 
 int CDVDAudioCodecDSD::GetSampleRate()
 {
-  return m_sampleRate;
+  return m_sampleRate / 2;
 }
 
 enum AEDataFormat CDVDAudioCodecDSD::GetDataFormat()
 {
-  return m_format.m_dataFormat;
+  return AE_FMT_S32NE;
+//  return m_format.m_dataFormat;
 }
 
 int CDVDAudioCodecDSD::GetBitRate()
 {
-  return 0;
+  return m_format.m_sampleRate;
 }
 
 enum AVMatrixEncoding CDVDAudioCodecDSD::GetMatrixEncoding()
@@ -270,14 +299,6 @@ enum AVAudioServiceType CDVDAudioCodecDSD::GetAudioServiceType()
 int CDVDAudioCodecDSD::GetProfile()
 {
   return 0;
-}
-
-static unsigned count_bits(int64_t value)
-{
-  unsigned bits = 0;
-  for(;value;++bits)
-    value &= value - 1;
-  return bits;
 }
 
 void CDVDAudioCodecDSD::BuildChannelMap()

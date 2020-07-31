@@ -59,10 +59,11 @@ protected:
   int m_sampleRate;
   uint64_t m_layout;
   std::string m_codecName;
+  bool m_planar{false};
 
   uint8_t* m_buffer{nullptr};
-  size_t m_bufferSize{0};
-  size_t m_dataSize{0};
+  int m_bufferSize{0};
+  int m_dataSize{0};
 
   double m_currentPts{DVD_NOPTS_VALUE};
   double m_nextPts{DVD_NOPTS_VALUE};

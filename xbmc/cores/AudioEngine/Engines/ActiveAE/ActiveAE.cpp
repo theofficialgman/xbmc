@@ -68,6 +68,7 @@ void CEngineStats::GetDelay(AEDelayStatus& status)
 {
   CSingleLock lock(m_lock);
   status = m_sinkDelay;
+
   if (m_pcmOutput)
     status.delay += (double)m_bufferedSamples / m_sinkSampleRate;
   else
@@ -1180,7 +1181,7 @@ void CActiveAE::Configure(AEAudioFormat *desiredFmt)
     m_settings.driver = driver;
     m_currDevice = device;
     initSink = true;
-    m_stats.Reset(m_sinkFormat.m_sampleRate, m_mode == MODE_PCM);
+    m_stats.Reset(m_sinkFormat.m_sampleRate, m_mode == MODE_PCM || m_mode == MODE_DSD);
     m_sink.m_controlPort.SendOutMessage(CSinkControlProtocol::VOLUME, &m_volume, sizeof(float));
 
     if (m_sinkRequestFormat.m_dataFormat != AE_FMT_RAW)
@@ -1368,7 +1369,12 @@ void CActiveAE::Configure(AEAudioFormat *desiredFmt)
     m_stats.AddSamples(0, m_streams);
 
     // buffers for viz
-    if (!(inputFormat.m_dataFormat == AE_FMT_RAW))
+    if (!(inputFormat.m_dataFormat == AE_FMT_RAW || 
+          inputFormat.m_dataFormat == AE_FMT_DSD_U8 || 
+          inputFormat.m_dataFormat == AE_FMT_DSD_U16_BE ||
+          inputFormat.m_dataFormat == AE_FMT_DSD_U16_LE ||
+          inputFormat.m_dataFormat == AE_FMT_DSD_U32_BE ||
+          inputFormat.m_dataFormat == AE_FMT_DSD_U32_LE ))
     {
       if (initSink && m_vizBuffers)
       {
@@ -1657,7 +1663,7 @@ void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &sett
            format.m_dataFormat == AE_FMT_DSD_U32_LE)
   {
     if (mode)
-      *mode = MODE_PCM;
+      *mode = MODE_DSD;
   }
   // transcode
   else if (settings.channels <= AE_CH_LAYOUT_2_0 && // no multichannel pcm
@@ -1915,6 +1921,7 @@ bool CActiveAE::RunStages()
       float buftime = (float)(*it)->m_inputBuffers->m_format.m_frames / (*it)->m_inputBuffers->m_format.m_sampleRate;
       if ((*it)->m_inputBuffers->m_format.m_dataFormat == AE_FMT_RAW)
         buftime = (*it)->m_inputBuffers->m_format.m_streamInfo.GetDuration() / 1000;
+
       while ((time < MAX_CACHE_LEVEL || (*it)->m_streamIsBuffering) && !(*it)->m_inputBuffers->m_freeSamples.empty())
       {
         buffer = (*it)->m_inputBuffers->GetFreeBuffer();
@@ -1991,7 +1998,7 @@ bool CActiveAE::RunStages()
     }
 
     // mix streams and sounds sounds
-    if (m_mode != MODE_RAW)
+    if (m_mode != MODE_RAW && m_mode != MODE_DSD)
     {
       CSampleBuffer *out = NULL;
       if (!m_sounds_playing.empty() && m_streams.empty())
