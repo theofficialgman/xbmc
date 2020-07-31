@@ -17,7 +17,6 @@
 #include "DVDCodecs/DVDCodecs.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
 #include <cstddef>
-#include <bits/stdint-uintn.h>
 #include <libavcodec/codec_id.h>
 
 extern "C" {
