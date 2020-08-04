@@ -171,22 +171,23 @@ bool CDVDAudioCodecDSD::AddData(const DemuxPacket &packet)
     m_dataSize = 0;
 
     // repackage planar dataformat to single plane
-    for (size_t i = 0; i < iSize / m_channels / 2; ++i)
+    for (size_t i = 0; i < iSize / m_channels / 4; ++i)
     {
       for (int c = 0; c < m_channels; ++c)
       {
-        const size_t fp = (iSize / m_channels) * c + (i * 2);
+        const size_t fp = (iSize / m_channels) * c + (i * 4);
+
+        *p++ = DSD_8To32(pData[fp], 
+                         pData[fp + 1], 
+                         pData[fp + 2],
+                         pData[fp + 3]);
 
         /*
-         **p++ = DSD_8To32(pData[fp], 
-         *                 pData[fp + 1], 
-         *                 pData[fp + 2],
-         *                 pData[fp + 3]);
+         **p++ = DSD_8To32( marker ? 0x05 : 0xFA, 
+         *                 pData[fp], 
+         *                 pData[fp + 1],
+         *                 0x00);
          */
-        *p++ = DSD_8To32( marker ? 0x05 : 0xFA, 
-                         pData[fp], 
-                         pData[fp + 1],
-                         0x00);
 
         m_dataSize += 4;
       }
@@ -212,12 +213,12 @@ void CDVDAudioCodecDSD::GetData(DVDAudioFrame &frame)
   frame.format.m_dataFormat = GetDataFormat();
   frame.format.m_channelLayout = m_format.m_channelLayout;
   // frame.framesize = (CAEUtil::DataFormatToBits(frame.format.m_dataFormat) >> 3) * frame.format.m_channelLayout.Count();
-  frame.framesize = 2 * frame.format.m_channelLayout.Count();
+  frame.framesize = 4 * frame.format.m_channelLayout.Count();
 
   if(frame.framesize == 0)
     return;
 
-  frame.nb_frames = bytes / frame.format.m_channelLayout.Count() / 2;
+  frame.nb_frames = bytes / frame.format.m_channelLayout.Count() / 4;
   frame.framesOut = 0;
   frame.planes = 1;
 
@@ -272,13 +273,14 @@ int CDVDAudioCodecDSD::GetChannels()
 
 int CDVDAudioCodecDSD::GetSampleRate()
 {
-  return m_sampleRate / 2;
+  return m_sampleRate / 4;
 }
 
 enum AEDataFormat CDVDAudioCodecDSD::GetDataFormat()
 {
-  return AE_FMT_S32NE;
+//  return AE_FMT_S32NE;
 //  return m_format.m_dataFormat;
+  return AE_FMT_DSD_U32_BE;
 }
 
 int CDVDAudioCodecDSD::GetBitRate()

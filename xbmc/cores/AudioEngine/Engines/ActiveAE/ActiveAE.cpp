@@ -7,7 +7,6 @@
  */
 
 #include "ActiveAE.h"
-#include "Utils/AEChannelData.h"
 
 using namespace AE;
 using namespace ActiveAE;
@@ -30,6 +29,13 @@ using namespace ActiveAE;
 #define MAX_CACHE_LEVEL 0.4   // total cache time of stream in seconds
 #define MAX_WATER_LEVEL 0.2   // buffered time after stream stages in seconds
 #define MAX_BUFFER_TIME 0.1   // max time of a buffer in seconds
+
+
+constexpr const uint8_t SilencePattern(bool dsd_mode) noexcept 
+{
+  return dsd_mode ? 0x69 : 0x00;
+}
+
 
 void CEngineStats::Reset(unsigned int sampleRate, bool pcm)
 {
@@ -68,7 +74,6 @@ void CEngineStats::GetDelay(AEDelayStatus& status)
 {
   CSingleLock lock(m_lock);
   status = m_sinkDelay;
-
   if (m_pcmOutput)
     status.delay += (double)m_bufferedSamples / m_sinkSampleRate;
   else
@@ -1369,12 +1374,7 @@ void CActiveAE::Configure(AEAudioFormat *desiredFmt)
     m_stats.AddSamples(0, m_streams);
 
     // buffers for viz
-    if (!(inputFormat.m_dataFormat == AE_FMT_RAW || 
-          inputFormat.m_dataFormat == AE_FMT_DSD_U8 || 
-          inputFormat.m_dataFormat == AE_FMT_DSD_U16_BE ||
-          inputFormat.m_dataFormat == AE_FMT_DSD_U16_LE ||
-          inputFormat.m_dataFormat == AE_FMT_DSD_U32_BE ||
-          inputFormat.m_dataFormat == AE_FMT_DSD_U32_LE ))
+    if (!(inputFormat.m_dataFormat == AE_FMT_RAW))
     {
       if (initSink && m_vizBuffers)
       {
@@ -1578,7 +1578,7 @@ void CActiveAE::FlushEngine()
     CLog::Log(LOGERROR, "ActiveAE::%s - failed to flush", __FUNCTION__);
     m_extError = true;
   }
-  m_stats.Reset(m_sinkFormat.m_sampleRate, m_mode == MODE_PCM);
+  m_stats.Reset(m_sinkFormat.m_sampleRate, m_mode == MODE_PCM || m_mode == MODE_DSD);
 }
 
 void CActiveAE::ClearDiscardedBuffers()
@@ -1921,7 +1921,6 @@ bool CActiveAE::RunStages()
       float buftime = (float)(*it)->m_inputBuffers->m_format.m_frames / (*it)->m_inputBuffers->m_format.m_sampleRate;
       if ((*it)->m_inputBuffers->m_format.m_dataFormat == AE_FMT_RAW)
         buftime = (*it)->m_inputBuffers->m_format.m_streamInfo.GetDuration() / 1000;
-
       while ((time < MAX_CACHE_LEVEL || (*it)->m_streamIsBuffering) && !(*it)->m_inputBuffers->m_freeSamples.empty())
       {
         buffer = (*it)->m_inputBuffers->GetFreeBuffer();
@@ -1998,7 +1997,7 @@ bool CActiveAE::RunStages()
     }
 
     // mix streams and sounds sounds
-    if (m_mode != MODE_RAW && m_mode != MODE_DSD)
+    if (m_mode != MODE_RAW)
     {
       CSampleBuffer *out = NULL;
       if (!m_sounds_playing.empty() && m_streams.empty())
@@ -2008,7 +2007,9 @@ bool CActiveAE::RunStages()
           out = m_silenceBuffers->GetFreeBuffer();
           for (int i=0; i<out->pkt->planes; i++)
           {
-            memset(out->pkt->data[i], 0, out->pkt->linesize);
+            uint8_t silencePattern = 0;
+
+            memset(out->pkt->data[i], SilencePattern(m_mode == MODE_DSD), out->pkt->linesize);
           }
           out->pkt->nb_samples = out->pkt->max_nb_samples;
         }
