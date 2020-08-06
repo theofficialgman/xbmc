@@ -2276,10 +2276,13 @@ bool CActiveAE::RunStages()
             m_vizBuffers->Flush();
         }
 
-        // mix gui sounds
-        MixSounds(*(out->pkt));
-        if (!m_sinkHasVolume || m_muted)
-          Deamplify(*(out->pkt));
+        if (! m_mode == MODE_DSD) 
+        {
+          // mix gui sounds
+          MixSounds(*(out->pkt));
+          if (!m_sinkHasVolume || m_muted)
+            Deamplify(*(out->pkt));
+        }
 
         if (m_mode == MODE_TRANSCODE && m_encoder)
         {
