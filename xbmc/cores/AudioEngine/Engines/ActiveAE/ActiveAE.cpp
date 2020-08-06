@@ -1997,7 +1997,7 @@ bool CActiveAE::RunStages()
     }
 
     // mix streams and sounds sounds
-    if (m_mode != MODE_RAW)
+    if (m_mode != MODE_RAW && m_mode != MODE_DSD)
     {
       CSampleBuffer *out = NULL;
       if (!m_sounds_playing.empty() && m_streams.empty())
@@ -2007,8 +2007,6 @@ bool CActiveAE::RunStages()
           out = m_silenceBuffers->GetFreeBuffer();
           for (int i=0; i<out->pkt->planes; i++)
           {
-            uint8_t silencePattern = 0;
-
             memset(out->pkt->data[i], SilencePattern(m_mode == MODE_DSD), out->pkt->linesize);
           }
           out->pkt->nb_samples = out->pkt->max_nb_samples;
@@ -2105,25 +2103,22 @@ bool CActiveAE::RunStages()
                 }
               }
 
-              if (m_mode != MODE_DSD) {
+              // volume for stream
+              float volume = (*it)->m_volume * (*it)->m_rgain;
+              if(nb_loops > 1)
+                volume *= (*it)->m_limiter.Run((float**)out->pkt->data, out->pkt->config.channels, i*nb_floats, out->pkt->planes > 1);
 
-                // volume for stream
-                float volume = (*it)->m_volume * (*it)->m_rgain;
-                if(nb_loops > 1)
-                  volume *= (*it)->m_limiter.Run((float**)out->pkt->data, out->pkt->config.channels, i*nb_floats, out->pkt->planes > 1);
-
-                for(int j=0; j<out->pkt->planes; j++)
-                {
+              for(int j=0; j<out->pkt->planes; j++)
+              {
 #if defined(HAVE_SSE) && defined(__SSE__)
-                  CAEUtil::SSEMulArray((float*)out->pkt->data[j]+i*nb_floats, volume, nb_floats);
+                CAEUtil::SSEMulArray((float*)out->pkt->data[j]+i*nb_floats, volume, nb_floats);
 #else
-                  float* fbuffer = (float*) out->pkt->data[j]+i*nb_floats;
-                  for (int k = 0; k < nb_floats; ++k)
-                  {
-                    fbuffer[k] *= volume;
-                  }
-#endif
+                float* fbuffer = (float*) out->pkt->data[j]+i*nb_floats;
+                for (int k = 0; k < nb_floats; ++k)
+                {
+                  fbuffer[k] *= volume;
                 }
+#endif
               }
             }
           }
@@ -2276,13 +2271,10 @@ bool CActiveAE::RunStages()
             m_vizBuffers->Flush();
         }
 
-        if (! m_mode == MODE_DSD) 
-        {
-          // mix gui sounds
-          MixSounds(*(out->pkt));
-          if (!m_sinkHasVolume || m_muted)
-            Deamplify(*(out->pkt));
-        }
+        // mix gui sounds
+        MixSounds(*(out->pkt));
+        if (!m_sinkHasVolume || m_muted)
+          Deamplify(*(out->pkt));
 
         if (m_mode == MODE_TRANSCODE && m_encoder)
         {
@@ -2310,6 +2302,56 @@ bool CActiveAE::RunStages()
         int samples = (m_mode == MODE_TRANSCODE) ? 1 : out->pkt->nb_samples;
         m_stats.AddSamples(samples, m_streams);
         m_sinkBuffers->m_inputSamples.push_back(out);
+      }
+    }
+    // handle DSD stream
+    else if (m_mode == MODE_DSD)
+    {
+      CSampleBuffer *out = NULL;
+
+      std::list<CActiveAEStream*>::iterator it;
+      CSampleBuffer *buffer;
+      for (it = m_streams.begin(); it != m_streams.end(); ++it)
+      {
+        if (!(*it)->m_processingBuffers->m_outputSamples.empty() && !(*it)->m_paused)
+        {
+          (*it)->m_started = true;
+          buffer = SyncStream(*it);
+          m_stats.UpdateStream(*it);
+
+          if (!buffer)
+          {
+            buffer = (*it)->m_processingBuffers->m_outputSamples.front();
+            (*it)->m_processingBuffers->m_outputSamples.pop_front();
+          }
+
+          if (buffer)
+          {
+            out = buffer;
+            break;
+          }
+        }
+      }
+
+      if (!out)
+      {
+        if (m_silenceBuffers && !m_silenceBuffers->m_freeSamples.empty())
+        {
+          out = m_silenceBuffers->GetFreeBuffer();
+          for (int i=0; i<out->pkt->planes; i++)
+          {
+            memset(out->pkt->data[i], SilencePattern(true), out->pkt->linesize);
+          }
+          out->pkt->nb_samples = out->pkt->max_nb_samples;
+        }
+      }
+
+      if (out)
+      {
+        m_stats.AddSamples(out->pkt->nb_samples, m_streams);
+        m_sinkBuffers->m_inputSamples.push_back(out);
+
+        busy = true;
       }
     }
     // pass through
@@ -2431,7 +2473,7 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
     {
       for(int i=0; i<buf->pkt->planes; i++)
       {
-        memset(buf->pkt->data[i], 0, buf->pkt->linesize);
+        memset(buf->pkt->data[i], SilencePattern(m_mode == MODE_DSD), buf->pkt->linesize);
       }
     }
   }
@@ -2471,7 +2513,7 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
           error -= framesToDelay*1000/ret->pkt->config.sample_rate;
           for(int i=0; i<ret->pkt->planes; i++)
           {
-            memset(ret->pkt->data[i], 0, ret->pkt->linesize);
+            memset(ret->pkt->data[i], SilencePattern(m_mode == MODE_DSD), ret->pkt->linesize);
           }
         }
 

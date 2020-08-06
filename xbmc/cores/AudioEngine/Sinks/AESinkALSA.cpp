@@ -928,6 +928,17 @@ unsigned int CAESinkALSA::AddPackets(uint8_t **data, unsigned int frames, unsign
     else // take care as we can come here a second time if the sink does not eat all data
       amount = (unsigned int) data_left;
 
+/*
+ *    char r[100000];
+ *    memset(r, 0, sizeof(r));
+ *    for (int i = 0; i < amount; ++i)
+ *    {
+ *      sprintf(r, "%s 0x%x", r, *(data[0]+offset*m_format.m_frameSize+i));
+ *    }
+ *
+ *    CLog::Log(LOGDEBUG, "write buffer %s ", r);
+ */
+
     int ret = snd_pcm_writei(m_pcm, buffer, amount);
     if (ret < 0)
     {

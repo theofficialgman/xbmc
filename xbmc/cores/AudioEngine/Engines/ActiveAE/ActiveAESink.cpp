@@ -9,6 +9,7 @@
 #include "ActiveAESink.h"
 
 #include "ActiveAE.h"
+#include "Utils/AEChannelData.h"
 #include "cores/AudioEngine/AEResampleFactory.h"
 #include "cores/AudioEngine/Utils/AEBitstreamPacker.h"
 #include "cores/AudioEngine/Utils/AEStreamInfo.h"
@@ -413,7 +414,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           if (streamNoise != m_streamNoise)
           {
             m_streamNoise = streamNoise;
-            GenerateNoise();
+            GenerateNoise(m_sinkFormat);
           }
         }
         return;
@@ -888,8 +889,8 @@ void CActiveAESink::OpenSink()
   m_sampleOfSilence.pkt = new CSoundPacket(config, m_sinkFormat.m_frames);
   m_sampleOfSilence.pkt->nb_samples = m_sampleOfSilence.pkt->max_nb_samples;
   if (!passthrough)
-    GenerateNoise();
-  else
+    GenerateNoise(m_sinkFormat);
+  else 
   {
     m_sampleOfSilence.pkt->nb_samples = 0;
     m_sampleOfSilence.pkt->pause_burst_ms = m_sinkFormat.m_streamInfo.GetDuration();
@@ -1028,6 +1029,7 @@ unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
     written = m_sink->AddPackets(buffer, maxFrames, totalFrames - frames);
     if (written == 0)
     {
+      CLog::Log(LOGDEBUG, "CActiveAESink::OutputSamples - nothing is written");
       CThread::Sleep(500 * m_sinkFormat.m_frames / m_sinkFormat.m_sampleRate);
       retry++;
       if (retry > 4)
@@ -1081,7 +1083,7 @@ void CActiveAESink::SwapInit(CSampleBuffer* samples)
 
 #define PI 3.1415926536f
 
-void CActiveAESink::GenerateNoise()
+void CActiveAESink::GenerateNoise(const AEAudioFormat &format)
 {
   int nb_floats = m_sampleOfSilence.pkt->max_nb_samples;
   nb_floats *= m_sampleOfSilence.pkt->config.channels;
@@ -1091,8 +1093,16 @@ void CActiveAESink::GenerateNoise()
   if (!noise)
     throw std::bad_alloc();
 
-  if (!m_streamNoise)
-    memset(noise, 0, size);
+  if (!m_streamNoise || format.m_dataFormat == AE_FMT_DSD_U32_BE) 
+  {
+    uint8_t pattern = 0;
+    if (format.m_dataFormat == AE_FMT_DSD_U32_BE)
+    {
+      pattern = 0x69;
+    }
+
+    memset(noise, pattern, size);
+  }
   else
   {
     float R1, R2;

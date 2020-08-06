@@ -218,7 +218,7 @@ const char* CAEUtil::DataFormatToStr(const enum AEDataFormat dataFormat)
     "AE_FMT_DSD_U8",
     "AE_FMT_DSD_U16_BE",
     "AE_FMT_DSD_U16_LE",
-    "AE_FMT_DSD_U32_BC",
+    "AE_FMT_DSD_U32_BE",
     "AE_FMT_DSD_U32_LE",
 
     "AE_FMT_RAW",

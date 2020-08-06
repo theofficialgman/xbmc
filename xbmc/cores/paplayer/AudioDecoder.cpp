@@ -12,6 +12,7 @@
 #include "CodecFactory.h"
 #include "FileItem.h"
 #include "ServiceBroker.h"
+#include "cores/AudioEngine/Utils/AEChannelData.h"
 #include "music/tags/MusicInfoTag.h"
 #include "settings/Settings.h"
 #include "settings/SettingsComponent.h"

@@ -10,8 +10,10 @@
 
 #include "ActiveAE.h"
 #include "ActiveAEFilter.h"
+#include "Utils/AEChannelData.h"
 #include "cores/AudioEngine/AEResampleFactory.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
+#include "utils/log.h"
 
 using namespace ActiveAE;
 
@@ -211,7 +213,7 @@ bool CActiveAEBufferPoolResample::ResampleBuffers(int64_t timestamp)
   bool busy = false;
   CSampleBuffer *in;
 
-  if (!m_resampler)
+  if (!m_resampler || m_format.m_dataFormat == AE_FMT_DSD_U32_BE)
   {
     if (m_changeResampler)
     {

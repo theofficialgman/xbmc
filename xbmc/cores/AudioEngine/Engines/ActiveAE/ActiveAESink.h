@@ -111,7 +111,7 @@ protected:
   unsigned int OutputSamples(CSampleBuffer* samples);
   void SwapInit(CSampleBuffer* samples);
 
-  void GenerateNoise();
+  void GenerateNoise(const AEAudioFormat &format);
 
   CEvent m_outMsgEvent;
   CEvent *m_inMsgEvent;
