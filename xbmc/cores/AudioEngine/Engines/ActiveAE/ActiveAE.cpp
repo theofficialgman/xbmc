@@ -2105,22 +2105,25 @@ bool CActiveAE::RunStages()
                 }
               }
 
-              // volume for stream
-              float volume = (*it)->m_volume * (*it)->m_rgain;
-              if(nb_loops > 1)
-                volume *= (*it)->m_limiter.Run((float**)out->pkt->data, out->pkt->config.channels, i*nb_floats, out->pkt->planes > 1);
+              if (m_mode != MODE_DSD) {
 
-              for(int j=0; j<out->pkt->planes; j++)
-              {
-#if defined(HAVE_SSE) && defined(__SSE__)
-                CAEUtil::SSEMulArray((float*)out->pkt->data[j]+i*nb_floats, volume, nb_floats);
-#else
-                float* fbuffer = (float*) out->pkt->data[j]+i*nb_floats;
-                for (int k = 0; k < nb_floats; ++k)
+                // volume for stream
+                float volume = (*it)->m_volume * (*it)->m_rgain;
+                if(nb_loops > 1)
+                  volume *= (*it)->m_limiter.Run((float**)out->pkt->data, out->pkt->config.channels, i*nb_floats, out->pkt->planes > 1);
+
+                for(int j=0; j<out->pkt->planes; j++)
                 {
-                  fbuffer[k] *= volume;
-                }
+#if defined(HAVE_SSE) && defined(__SSE__)
+                  CAEUtil::SSEMulArray((float*)out->pkt->data[j]+i*nb_floats, volume, nb_floats);
+#else
+                  float* fbuffer = (float*) out->pkt->data[j]+i*nb_floats;
+                  for (int k = 0; k < nb_floats; ++k)
+                  {
+                    fbuffer[k] *= volume;
+                  }
 #endif
+                }
               }
             }
           }

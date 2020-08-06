@@ -212,8 +212,7 @@ void CDVDAudioCodecDSD::GetData(DVDAudioFrame &frame)
   frame.passthrough = false;
   frame.format.m_dataFormat = GetDataFormat();
   frame.format.m_channelLayout = m_format.m_channelLayout;
-  // frame.framesize = (CAEUtil::DataFormatToBits(frame.format.m_dataFormat) >> 3) * frame.format.m_channelLayout.Count();
-  frame.framesize = 4 * frame.format.m_channelLayout.Count();
+  frame.framesize = (CAEUtil::DataFormatToBits(frame.format.m_dataFormat) >> 3) * frame.format.m_channelLayout.Count();
 
   if(frame.framesize == 0)
     return;
