@@ -60,7 +60,6 @@
 using namespace KODI;
 using namespace XFILE;
 
-//! @todo: remove in c++17
 constexpr const char* CSettings::SETTING_LOOKANDFEEL_SKIN;
 constexpr const char* CSettings::SETTING_LOOKANDFEEL_SKINSETTINGS;
 constexpr const char* CSettings::SETTING_LOOKANDFEEL_SKINTHEME;
@@ -372,6 +371,7 @@ constexpr const char* CSettings::SETTING_AUDIOOUTPUT_DTSPASSTHROUGH;
 constexpr const char* CSettings::SETTING_AUDIOOUTPUT_TRUEHDPASSTHROUGH;
 constexpr const char* CSettings::SETTING_AUDIOOUTPUT_DTSHDPASSTHROUGH;
 constexpr const char* CSettings::SETTING_AUDIOOUTPUT_VOLUMESTEPS;
+constexpr const char* CSettings::SETTING_AUDIOOUTPUT_DSD;
 constexpr const char* CSettings::SETTING_INPUT_PERIPHERALS;
 constexpr const char* CSettings::SETTING_INPUT_PERIPHERALLIBRARIES;
 constexpr const char* CSettings::SETTING_INPUT_ENABLEMOUSE;
@@ -1019,6 +1019,7 @@ void CSettings::InitializeISettingCallbacks()
   settingSet.clear();
   settingSet.insert(CSettings::SETTING_LOCALE_TIMEZONE);
   settingSet.insert(CSettings::SETTING_LOCALE_TIMEZONECOUNTRY);
+  settingSet.insert(CSettings::SETTING_AUDIOOUTPUT_DSD);
   GetSettingsManager()->RegisterCallback(&g_timezone, settingSet);
 #endif
 

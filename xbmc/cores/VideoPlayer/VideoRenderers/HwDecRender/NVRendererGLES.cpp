@@ -18,6 +18,7 @@
 #include <GLES2/gl2.h>
 
 using namespace KODI::NVV4L;
+using namespace KODI::WINDOWING::X11;
 
 extern "C"
 {

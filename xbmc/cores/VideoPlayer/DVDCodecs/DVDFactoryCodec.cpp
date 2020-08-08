@@ -21,6 +21,9 @@
 #include "Video/AddonVideoCodec.h"
 #include "Video/DVDVideoCodec.h"
 #include "Video/DVDVideoCodecFFmpeg.h"
+#include "ServiceBroker.h"
+#include "settings/Settings.h"
+#include "settings/SettingsComponent.h"
 #include "addons/AddonProvider.h"
 #include "cores/VideoPlayer/DVDCodecs/DVDCodecs.h"
 #include "threads/SingleLock.h"
@@ -198,10 +201,13 @@ CDVDAudioCodec* CDVDFactoryCodec::CreateAudioCodec(CDVDStreamInfo &hint, CProces
 
   }
 
-  pCodec.reset(new CDVDAudioCodecDSD(processInfo));
-  if (pCodec->Open(hint, options))
+  if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_AUDIOOUTPUT_DSD))
   {
-    return pCodec.release();
+    pCodec.reset(new CDVDAudioCodecDSD(processInfo));
+    if (pCodec->Open(hint, options))
+    {
+      return pCodec.release();
+    }
   }
 
   pCodec.reset(new CDVDAudioCodecFFmpeg(processInfo));

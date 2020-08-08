@@ -22465,3 +22465,14 @@ msgstr ""
 msgctxt "#39153"
 msgid "Windowing system:"
 msgstr ""
+
+#. Label for DSD Enable option
+#: system/settings/settings.xml
+msgctxt "#39154"
+msgid "DSD Enable"
+msgstr ""
+
+# Help for DSD Enable option
+#: system/settings/settings.xml
+msgctxt "#39154"
+msgid "Enable passing Native DSD Stream to DAC"

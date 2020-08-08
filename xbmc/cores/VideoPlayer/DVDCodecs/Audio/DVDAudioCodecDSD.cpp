@@ -265,17 +265,6 @@ void CDVDAudioCodecDSD::GetData(DVDAudioFrame &frame)
 
   frame.pts = m_currentPts;
   frame.hasDownmix = false;
-
-  /*
-   *char r[500];
-   *memset(r, 0, sizeof(r));
-   *for (int i = 0; i < 100; ++i)
-   *{
-   *  sprintf(r, "%s 0x%x", r, frame.data[0][i]);
-   *}
-
-  CLog::Log(LOGDEBUG, "received buffer %s ", r);
-   */
 }
 
 int CDVDAudioCodecDSD::GetData(uint8_t** dst)
