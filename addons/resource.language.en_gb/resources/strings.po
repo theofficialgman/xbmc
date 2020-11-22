@@ -22474,5 +22474,5 @@ msgstr ""
 
 # Help for DSD Enable option
 #: system/settings/settings.xml
-msgctxt "#39154"
+msgctxt "#39155"
 msgid "Enable passing Native DSD Stream to DAC"

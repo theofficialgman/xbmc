@@ -963,6 +963,7 @@ void CSettings::InitializeISettingCallbacks()
 
   settingSet.clear();
   settingSet.insert(CSettings::SETTING_AUDIOOUTPUT_PASSTHROUGH);
+  settingSet.insert(CSettings::SETTING_AUDIOOUTPUT_DSD);
   settingSet.insert(CSettings::SETTING_LOOKANDFEEL_SKIN);
   settingSet.insert(CSettings::SETTING_LOOKANDFEEL_SKINSETTINGS);
   settingSet.insert(CSettings::SETTING_LOOKANDFEEL_FONT);
@@ -1019,7 +1020,6 @@ void CSettings::InitializeISettingCallbacks()
   settingSet.clear();
   settingSet.insert(CSettings::SETTING_LOCALE_TIMEZONE);
   settingSet.insert(CSettings::SETTING_LOCALE_TIMEZONECOUNTRY);
-  settingSet.insert(CSettings::SETTING_AUDIOOUTPUT_DSD);
   GetSettingsManager()->RegisterCallback(&g_timezone, settingSet);
 #endif
 

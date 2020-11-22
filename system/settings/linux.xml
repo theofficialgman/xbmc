@@ -1,16 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <settings version="1">
-  <section id="system">
-    <category id="audio">
-      <group id="1">
-        <setting id="audiooutput.dsd" type="boolean" label="39120" help="39121">
-          <level>2</level>
-          <default>false</default>
-          <control type="toggle" />
-        </setting>
-      </group>
-    </category>
-  </section>
 
   <section id="player">
     <category id="videoplayer">
@@ -242,6 +231,15 @@
           <control type="list" format="string">
             <multiselect>false</multiselect>
           </control>
+        </setting>
+      </group>
+    </category>
+    <category id="audio">
+      <group id="1">
+        <setting id="audiooutput.dsd" type="boolean" label="39154" help="39155">
+          <level>2</level>
+          <default>false</default>
+          <control type="toggle" />
         </setting>
       </group>
     </category>
