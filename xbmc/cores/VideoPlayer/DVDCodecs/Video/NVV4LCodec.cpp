@@ -211,7 +211,7 @@ bool NVV4LCodec::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
     case AV_CODEC_ID_MPEG1VIDEO:
     case AV_CODEC_ID_MPEG2VIDEO:
       // MPEG-2
-      m_coding_type = V4L2_PIX_FMT_MPEG2;
+      m_coding_type = V4L2_PIX_FMT_MPEG;
       m_codec = "mpeg2";
     break;
     case AV_CODEC_ID_VP8:
