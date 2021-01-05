@@ -6,6 +6,7 @@
 #include "cores/VideoPlayer/DVDStreamInfo.h"
 #include "utils/BitstreamConverter.h"
 
+#include <bits/stdint-uintn.h>
 #include <libavutil/pixfmt.h>
 #include <linux/videodev2.h>
 #include <libv4l2.h>
@@ -126,8 +127,8 @@ public:
   int write(uint8_t* data, size_t len);
 
 
-  void SetPts(size_t pts);
-  size_t GetPts();
+  void EncodePts(double pts);
+  double DecodePts();
 
   int GetId() { return m_id; };
 
@@ -141,6 +142,7 @@ public:
   int GetDMAFd() { return m_fd_dma[0]; };
   int GetField() { return m_buffer.field; };
   bool HasData() { return m_data[0] != nullptr; };
+  uint32_t GetFlags() { return m_buffer.flags; };
 
 private:
   int m_device_fd{-1};
@@ -148,6 +150,7 @@ private:
   v4l2_memory m_memory;
 
   bool m_local{true};
+  bool m_mapped{false};
 
   struct v4l2_buffer m_buffer;
   struct v4l2_plane m_planes[YuvImage::MAX_PLANES];

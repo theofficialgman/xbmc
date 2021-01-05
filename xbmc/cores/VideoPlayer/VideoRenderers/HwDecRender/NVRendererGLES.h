@@ -72,6 +72,7 @@ private:
 
   bool m_bConfigured{false};
   bool m_bValidated{false};
+  bool m_passthroughHDR{false};
   float m_clearColour{0.0f};
 
   std::unique_ptr<CNV4LShader> m_shader{nullptr};

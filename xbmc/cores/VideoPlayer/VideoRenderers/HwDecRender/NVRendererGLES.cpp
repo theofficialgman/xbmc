@@ -134,6 +134,16 @@ bool CNVV4LRenderer::Configure(const VideoPicture& picture, float fps, unsigned 
 
   m_clearColour = CServiceBroker::GetWinSystem()->UseLimitedColor() ? (16.0f / 0xff) : 0.0f;
 
+  CalculateFrameAspectRatio(picture.iDisplayWidth, picture.iDisplayHeight);
+  SetViewMode(m_videoSettings.m_ViewMode);
+  ManageRenderArea();
+
+  if (picture.hasDisplayMetadata && picture.hasLightMetadata)
+  {
+    m_passthroughHDR = CServiceBroker::GetWinSystem()->SetHDR(&picture);
+    CLog::Log(LOGDEBUG, "LinuxRendererGLES::Configure: HDR passthrough: %s", m_passthroughHDR ? "on" : "off");
+  }
+
   m_bConfigured = true;
   return true;
 };
@@ -258,6 +268,7 @@ void CNVV4LRenderer::RenderUpdate (
   }
 
   glDisable(GL_BLEND);
+
 
   m_shader->Enable();
 

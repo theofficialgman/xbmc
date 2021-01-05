@@ -2,6 +2,7 @@
 
 #include "Buffers/VideoBuffer.h"
 #include "DVDCodecs/Video/DVDVideoCodec.h"
+#include "Interface/TimingConstants.h"
 #include "Process/ProcessInfo.h"
 #include "cores/VideoPlayer/DVDCodecs/DVDFactoryCodec.h"
 #include "cores/VideoSettings.h"
@@ -9,6 +10,7 @@
 #include "messaging/ApplicationMessenger.h"
 #include "utils/log.h"
 
+#include <bits/stdint-uintn.h>
 #include <libavcodec/avcodec.h>
 #include <libavutil/pixfmt.h>
 #include <libv4l2.h>
@@ -21,6 +23,7 @@
 #include <atomic>
 #include <cassert>
 #include <cerrno>
+#include <cstddef>
 #include <cstring>
 #include <memory>
 #include <mutex>
@@ -55,14 +58,11 @@ typedef struct _v4l2_ctrl_video_device_poll
 
 #endif
 
-
 using namespace KODI::NVV4L;
+
 
 NVV4LCodec::NVV4LCodec(CProcessInfo &processInfo) : CDVDVideoCodec(processInfo), m_dec_dev("/dev/nvhost-nvdec")
 {
-  memset(m_pts, 0, sizeof(m_pts));
-  memset(m_dts, 0, sizeof(m_dts));
-  m_ipts = 0;
 };
 
 
@@ -114,6 +114,7 @@ bool NVV4LCodec::OpenDevice()
   }
 
 
+  m_eos.store(false);
   CLog::Log(LOGINFO, "NVV4LCodec::Open device ready");
 
   return true;
@@ -175,7 +176,8 @@ void NVV4LCodec::Close()
     StreamOff(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
     StreamOff(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
 
-    m_is_capturing.store(false);
+    m_is_capturing.store(false, std::memory_order_relaxed);
+    m_eos.store(true, std::memory_order_relaxed);
 
     if (m_pool_output)
       m_pool_output->Dispose();
@@ -195,32 +197,38 @@ bool NVV4LCodec::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
   switch(hints.codec)
   {
     case AV_CODEC_ID_H264:
+      CLog::Log(LOGINFO, LOGVIDEO, "NVV4LCodec::Open Video codec H264");
       m_coding_type = V4L2_PIX_FMT_H264;
       m_codec = "h264";
     break;
     case AV_CODEC_ID_HEVC:
+      CLog::Log(LOGINFO, LOGVIDEO, "NVV4LCodec::Open Video codec HEVC");
       m_coding_type = V4L2_PIX_FMT_H265;
       m_codec = "hevc";
     break;
     case AV_CODEC_ID_H263:
     case AV_CODEC_ID_MPEG4:
       // MPEG-4, DivX 4/5 and Xvid compatible
+      CLog::Log(LOGINFO, LOGVIDEO, "NVV4LCodec::Open Video codec MPEG4");
       m_coding_type = V4L2_PIX_FMT_MPEG4;
       m_codec = "mpeg4";
     break;
     case AV_CODEC_ID_MPEG1VIDEO:
     case AV_CODEC_ID_MPEG2VIDEO:
       // MPEG-2
+      CLog::Log(LOGINFO, LOGVIDEO, "NVV4LCodec::Open Video codec MPEG");
       m_coding_type = V4L2_PIX_FMT_MPEG;
       m_codec = "mpeg2";
     break;
     case AV_CODEC_ID_VP8:
       // VP8
+      CLog::Log(LOGINFO, LOGVIDEO, "NVV4LCodec::Open Video codec VP8");
       m_coding_type =  V4L2_PIX_FMT_VP8;
       m_codec = "vp8";
     break;
     case AV_CODEC_ID_VP9:
       // VP8
+      CLog::Log(LOGINFO, LOGVIDEO, "NVV4LCodec::Open Video codec VP9");
       m_coding_type =  V4L2_PIX_FMT_VP9;
       m_codec = "vp9";
     default:
@@ -271,11 +279,6 @@ bool NVV4LCodec::AddData(const DemuxPacket &packet)
   {
      m_eos.store(true, std::memory_order_relaxed);
      // send one empty buffer to decoder to indicate end of stream
-  
-     m_pts[m_ipts % PTS_MAX] = packet.pts;
-     m_dts[m_ipts % PTS_MAX] = packet.dts;
-     buffer->SetPts(m_ipts++);
-
      buffer->Enqueue();
   }
 
@@ -290,10 +293,7 @@ bool NVV4LCodec::AddData(const DemuxPacket &packet)
   size_t len = m_bitconverter->GetConvertSize();
 
 
-  m_pts[m_ipts % PTS_MAX] = packet.pts;
-  m_dts[m_ipts % PTS_MAX] = packet.dts;
-
-  buffer->SetPts(m_ipts++);
+  buffer->EncodePts(packet.pts == DVD_NOPTS_VALUE ? packet.dts : packet.pts);
   buffer->write(data, len);
 
   if (!buffer->Enqueue())
@@ -304,7 +304,7 @@ bool NVV4LCodec::AddData(const DemuxPacket &packet)
 
   if (VERBOSE && CServiceBroker::GetLogging().CanLogComponent(LOGVIDEO))
     CLog::Log(LOGDEBUG, "NVV4LCodec::AddData: enqueued output buffer id:%d pts:%d ptsv:%.3f", buffer->GetId(),
-              buffer->GetPts(), packet.pts);
+              buffer->DecodePts(), packet.pts);
 
   return true;
 };
@@ -316,20 +316,9 @@ void NVV4LCodec::Reset()
 
   m_preroll.store(true, std::memory_order_relaxed);
 
-  memset(m_pts, 0, sizeof(m_pts));
-  memset(m_dts, 0, sizeof(m_dts));
-
-  m_ipts = 0;
   m_flushed = true;
 
-  StreamOff(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
-  StreamOff(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
-
-  m_pool_output->Reset();
-  m_pool_capture->Dispose();
-
   m_eos.store(false, std::memory_order_relaxed);
-  StreamOn(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
 
   CLog::Log(LOGINFO, "NVV4LCodec::Reset decoder reset");
 };
@@ -343,29 +332,19 @@ CDVDVideoCodec::VCReturn NVV4LCodec::GetPicture(VideoPicture* pVideoPicture)
     pVideoPicture->videoBuffer = nullptr;
   }
 
-  if (m_flushed)
-  {
-    m_flushed = false;
-    return CDVDVideoCodec::VCReturn::VC_REOPEN;
-  }
-
   HandleEvent();
 
-  if (!m_is_capturing.load(std::memory_order_relaxed) || (m_coder_control_flag & DVD_CODEC_CTRL_DRAIN)) 
+  if (!m_is_capturing.load(std::memory_order_relaxed)) 
     return CDVDVideoCodec::VCReturn::VC_BUFFER;
-
-  
-  if (m_eos.load(std::memory_order_relaxed)) {
-    return CDVDVideoCodec::VCReturn::VC_EOF;
-  }
 
   DispatchCapture();
 
+   
   CNVV4LBuffer* buffer = m_pool_capture->DequeueBuffer();
 
-  if (!buffer)
+  if (buffer->GetFlags() & V4L2_BUF_FLAG_LAST ) 
   {
-    return CDVDVideoCodec::VCReturn::VC_BUFFER;
+    return CDVDVideoCodec::VCReturn::VC_EOF;
   }
 
   buffer->Acquire(m_pool_capture);
@@ -384,8 +363,8 @@ CDVDVideoCodec::VCReturn NVV4LCodec::GetPicture(VideoPicture* pVideoPicture)
   pVideoPicture->iRepeatPicture = 0;
   pVideoPicture->color_space = 0; // not relevant for NVRenderer
 
-  pVideoPicture->pts = m_pts[buffer->GetPts() % PTS_MAX];
-  pVideoPicture->dts = m_dts[buffer->GetPts() % PTS_MAX];
+  pVideoPicture->pts = buffer->DecodePts();
+  pVideoPicture->dts = buffer->DecodePts();
 
   if (m_coder_control_flag & DVD_CODEC_CTRL_DROP) 
   {
@@ -471,9 +450,10 @@ void NVV4LCodec::HandleEvent()
       memset(&format, 0, sizeof(struct v4l2_format));
       QueryCaptureFormat(&format);
 
-      StreamOn(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
-
+      m_pool_capture->Dispose();
       m_pool_capture->Init(format, min_buffers + EXTRA_OUTPUT_BUFFERS);
+
+      StreamOn(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
 
       while (m_pool_capture->HasFreeBuffers())
       {
@@ -508,7 +488,7 @@ void NVV4LCodec::HandleOutputPool()
   {
     buffer->Release();
     if (VERBOSE && CServiceBroker::GetLogging().CanLogComponent(LOGVIDEO))
-      CLog::Log(LOGDEBUG, "NVV4LCodec::DecoderLoop dequed output buffer id:%d, pts:%d", buffer->GetId(), buffer->GetPts());
+      CLog::Log(LOGDEBUG, "NVV4LCodec::DecoderLoop dequed output buffer id:%d, pts:%d", buffer->GetId(), buffer->DecodePts());
   }
 };
 
@@ -522,7 +502,7 @@ void NVV4LCodec::HandleCapturePool()
 
       if (VERBOSE && CServiceBroker::GetLogging().CanLogComponent(LOGVIDEO))
         CLog::Log(LOGDEBUG, "NVV4LCodec::DecoderLoop dequed capture buffer id:%d, pts:%d",
-                  buffer->GetId(), buffer->GetPts());
+                  buffer->GetId(), buffer->DecodePts());
     }
   }
 };
@@ -556,9 +536,9 @@ void NVV4LCodec::DispatchOutput()
       m_pool_output->GetReadyBuffer();
       if (VERBOSE && CServiceBroker::GetLogging().CanLogComponent(LOGVIDEO))
         CLog::Log(LOGDEBUG, "NVV4LCodec::DecoderLoop enqueued output buffer id:%d, pts:%d",
-                  buffer->GetId(), buffer->GetPts());
+                  buffer->GetId(), buffer->DecodePts());
     } else {
-      CLog::Log(LOGWARNING, "NVV4LCodec::DecoderLoop failed enqueue output buffer id:%d, pts:%d", buffer->GetId(), buffer->GetPts());
+      CLog::Log(LOGWARNING, "NVV4LCodec::DecoderLoop failed enqueue output buffer id:%d, pts:%d", buffer->GetId(), buffer->DecodePts());
       break;
     }
   }
@@ -958,6 +938,7 @@ bool CNVV4LBuffer::Map()
     {
       CLog::Log(LOGERROR, "CNVV4LBuffer::Map failed to mmap buffer id:%d fd:%d offset:%d : %s", 
                 m_id, m_fd_dma[i], plane.m.mem_offset,  strerror(errno));
+      m_data[i] = 0;
       return false;
     }
   }
@@ -1084,13 +1065,22 @@ void CNVV4LBuffer::GetStrides(int(&strides)[YuvImage::MAX_PLANES])
 };
 
 
-void CNVV4LBuffer::SetPts(size_t pts) {
+void CNVV4LBuffer::EncodePts(double pts) {
+  uint64_t pts64;
+  std::memcpy(&pts64, &pts, sizeof(uint64_t));
+
   m_buffer.flags |= V4L2_BUF_FLAG_TIMESTAMP_COPY;
-  m_buffer.timestamp.tv_sec = pts; 
+  m_buffer.timestamp.tv_sec = pts64 >> 32; 
+  m_buffer.timestamp.tv_usec = pts64 & 0x0000ffff; 
 };
 
-size_t CNVV4LBuffer::GetPts() {
- return m_buffer.timestamp.tv_sec;
+double CNVV4LBuffer::DecodePts() {
+ uint64_t pts64 = ((uint64_t) m_buffer.timestamp.tv_sec << 32) | m_buffer.timestamp.tv_usec;
+ double pts;
+
+ std::memcpy(&pts, &pts64, sizeof(uint64_t));
+
+ return pts;
 };
 
 AVPixelFormat CNVV4LBuffer::GetFormat() 
