@@ -55,7 +55,7 @@ public:
   void Close();
 
   static void Register();
-  static CDVDVideoCodec* Create(CProcessInfo &processInfo);
+  static std::unique_ptr<CDVDVideoCodec> Create(CProcessInfo &processInfo);
 
 private:
   const char* m_dec_dev;

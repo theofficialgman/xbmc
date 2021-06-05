@@ -616,8 +616,8 @@ bool NVV4LCodec::StreamOff(uint32_t type)
 };
 
 
-CDVDVideoCodec* NVV4LCodec::Create(CProcessInfo &processInfo) {
-  return new NVV4LCodec(processInfo);
+std::unique_ptr<CDVDVideoCodec> NVV4LCodec::Create(CProcessInfo &processInfo) {
+  return std::make_unique<NVV4LCodec>(processInfo);
 };
 
 void NVV4LCodec::Register()
