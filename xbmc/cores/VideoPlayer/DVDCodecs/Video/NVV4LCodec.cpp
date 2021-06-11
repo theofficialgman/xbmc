@@ -41,6 +41,7 @@
 #define V4L2_CID_MPEG_SET_POLL_INTERRUPT (V4L2_CID_MPEG_BASE+551)
 
 #define V4L2_PIX_FMT_H265     v4l2_fourcc('H', '2', '6', '5')
+#define V4L2_PIX_FMT_VP9      v4l2_fourcc('V', 'P', '9', '0')
 
 
 /**
